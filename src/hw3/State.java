@@ -23,6 +23,7 @@ public class State {
 		this.bwdTransitions = new ArrayList<Transition>();
 		this.emissions = new ArrayList<Emission>();
 		this.probabilityList = new ArrayList<Double>();
+		this.visited = new ArrayList<Boolean>();
 	}
 	private List<Emission> emissions;
 	private String name;
@@ -33,12 +34,13 @@ public class State {
 		this.fwdTransitions.add(transition);
 	}
 	public void addBwdTransition(Transition transition) {
-		this.fwdTransitions.add(transition);
+		this.bwdTransitions.add(transition);
 	}
 
 
 	private List<Transition> fwdTransitions, bwdTransitions;
 	public List<Double> probabilityList;
+	public List<Boolean> visited;
 	
 
 }
