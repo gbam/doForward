@@ -11,27 +11,34 @@ public class State {
 	public String getName() {
 		return name;
 	}
-	public List<Transition> getTransitions() {
-		return transitions;
+	public List<Transition> getFwdTransitions() {
+		return fwdTransitions;
 	}
-	public int getIndex() {
-		return index;
+	public List<Transition> getBwdTransitions() {
+		return bwdTransitions;
 	}
-	public State(String name, int index) {
-		super();
+	public State(String name) {
 		this.name = name;
-		this.transitions = new ArrayList<Transition>();
+		this.fwdTransitions = new ArrayList<Transition>();
+		this.bwdTransitions = new ArrayList<Transition>();
 		this.emissions = new ArrayList<Emission>();
-		this.index = index;
+		this.probabilityList = new ArrayList<Double>();
 	}
 	private List<Emission> emissions;
 	private String name;
 	public void addEmission(Emission emission) {
 		this.emissions.add(emission);
 	}
-	public void addTransition(Transition transition) {
-		this.transitions.add(transition);
+	public void addFwdTransition(Transition transition) {
+		this.fwdTransitions.add(transition);
 	}
-	private List<Transition> transitions;
-	private int index;
+	public void addBwdTransition(Transition transition) {
+		this.fwdTransitions.add(transition);
+	}
+
+
+	private List<Transition> fwdTransitions, bwdTransitions;
+	public List<Double> probabilityList;
+	
+
 }
