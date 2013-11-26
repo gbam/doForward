@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 public class doForwrad {
 	private static String sequence;
 	private static State endState;
-	private static PriorityQueue<pqHelper> pq;
 	/**
 	 * @param args
 	 */
@@ -33,7 +32,7 @@ public class doForwrad {
 		String endStateName = args[5];
 		sequence = args[6];
 
-		HashMap<String, State> statesList = new HashMap<String, State>();
+		List<State> statesList = new ArrayList<State>();
 		//Transmission is read first to create all the nodes.
 		try{
 			File transitionsFile = new File(transitionsFileName + "." + transitionsFileNameSyntax);
@@ -46,22 +45,26 @@ public class doForwrad {
 					String[] temp = m.group(0).split(" ");
 					String fromName = temp[0];
 					String toName = temp[1];
-					Double probability = Double.parseDouble(temp[2]);
+					double probability = Double.parseDouble(temp[2]);
 					//You have to check if both states exist then add them if not
-					if(!statesList.containsKey(fromName)){
+					try{
+						statesList.get(Integer.parseInt(fromName));
+					}catch(IndexOutOfBoundsException e){
 						State s = new State(fromName);
-						statesList.put(s.getName(), s);
+						statesList.add(s);
 					}
-					if(!statesList.containsKey(toName)){
+					try{
+						statesList.get(Integer.parseInt(toName));
+					}catch(IndexOutOfBoundsException e){
 						State s = new State(toName);
-						statesList.put(s.getName(), s);
+						statesList.add(s);
 					}
-					State fromState = statesList.get(fromName);
-					State toState = statesList.get(toName); 
+					State fromState = statesList.get(Integer.parseInt(fromName));
+					State toState = statesList.get(Integer.parseInt(toName)); 
 					Transition fwdT = new Transition(fromState, toState, probability);
-					Transition bwdT = new Transition(toState, fromState, probability);
+					Transition bwdT = new Transition(fromState, toState, probability);
 					fromState.addFwdTransition(fwdT); //Adds the transition to the from state as this is the forward alg
-					fromState.addBwdTransition(bwdT); //Adds the backwards probability
+					toState.addBwdTransition(bwdT); //Adds the backwards probability
 				}
 				else throw new Exception("Bad File Format");
 			}
@@ -80,9 +83,9 @@ public class doForwrad {
 				String[] temp = reader.readLine().split(" ");
 				String nodeName = temp[0];
 				String emission = temp[1];
-				Double prob = Double.parseDouble(temp[2]);
+				double prob = Double.parseDouble(temp[2]);
 				Emission e = new Emission(prob, emission);
-				statesList.get(nodeName).addEmission(e); //We are assuming all nodes exist so we can just add it to the list for that node.
+				statesList.get(Integer.parseInt(nodeName)).addEmission(e); //We are assuming all nodes exist so we can just add it to the list for that node.
 				//	}
 				//	else throw new Exception("Bad File Format");
 			}
@@ -90,131 +93,46 @@ public class doForwrad {
 			System.out.println("Failed to emissions file");
 		}
 
-		State startState = statesList.get(startStateName);
-		endState = statesList.get(endStateName);
+		State startState = statesList.get(Integer.parseInt(startStateName));
+		endState = statesList.get(Integer.parseInt(endStateName));
 		startState.probabilityList.add(1.0);
-		pq = new PriorityQueue<pqHelper>();
-		tTaken = new ArrayList<Transition>();
-		for(Transition t: startState.getFwdTransitions()){
-			fwdAlg(t, 1);
-		}
-		
-		while(!pq.isEmpty()){
-			pqHelper pqHelp = pq.poll();
-			fwdAlg(pqHelp.t, pqHelp.priority);
-		}
-		List<State> myStateList = printMap(statesList);
-		for(int i = 0; i < sequence.length()+1; i++){
-			for(State s: myStateList){
-				Double prob = 0.0;
-				try{
-					prob = s.probabilityList.get(i);
-				}catch(Exception e){
-				}
-				if(prob != 0.0)	System.out.println("Alpha for state " + s.getName() + " time: " + i + ": " +  prob.floatValue());
-			}
-		}
 
-		
-	}
+		double[][] fMatrix = new double[statesList.size()][sequence.length() + 1];
+		fMatrix[0][0] = 1.0;
+		for(int k = 1; k < statesList.size(); k++){
+			if(statesList.get(k) != startState && statesList.get(k) != endState){
+				for(int t = 1; t < sequence.length() + 1; t++){
+					double sum = 0.0;
+					State currentState = statesList.get(k);
+					List<Transition> previousTrans = currentState.getBwdTransitions();
+					for(Transition tOld: previousTrans){
+						double transProb = tOld.getTransProb();
+						int originID = Integer.parseInt(tOld.fromState().getName());
+						double oldProb = fMatrix[originID][t-1];
+						sum += transProb * oldProb;
 
-	private static void fwdAlg(Transition trans, int t){
-		if(t <= sequence.length()){
-			State next = trans.toState();
-			if(next != endState){
-				List<Emission> emiss = next.getEmission(); //Possible list of emissions
-				Double emitProb = null;
-				for(Emission e: emiss){ //Finds the next emission probablity
-					if(e.emission().charAt(0) == sequence.charAt(t-1)){
-						emitProb = e.getEmissionProb();
 					}
-				}
-				if(emitProb == null){
-					System.out.println("Something went wrong and the emission probablity wasn't found");
-					System.exit(-1);
-				}
-				while(next.probabilityList.size() <= t){
-					next.probabilityList.add(0.0);
-				}
-				Double previousProbability = trans.fromState().probabilityList.get(t-1); 
-				Double currentProbability = 0.0;
-				try{
-					currentProbability = next.probabilityList.get(t);
-				}catch(Exception e){}
-				
-				Double newProbability = previousProbability * emitProb * trans.getTransProb() + currentProbability;
-				next.probabilityList.set(t, newProbability);
-				for(Transition tFwd: next.getFwdTransitions()){		
-					pqHelper pqHelps = new pqHelper();
-					pqHelps.priority = t+1;
-					pqHelps.t = tFwd;	
-					while(tFwd.toState().visited.size() <= t+1){
-						tFwd.toState().visited.add(false);
-					}
-					if(!tFwd.toState().visited.get(t+1)){
-						pq.add(pqHelps);
-						tFwd.toState().visited.set(t+1, true);
-					}
-					
-				}
-			}
-			if(next == endState && t == sequence.length()){
-				boolean transitionTaken = false;
-//				for(Transition tr: tTaken){
-//					if(tr.fromState() == trans.fromState() && tr.toState() == trans.toState()){
-//						transitionTaken = true;
-//						System.out.println("Taken!!!!!");
-//					}
-//				}
-				
-				if(!transitionTaken){
-				while(next.probabilityList.size()-1 < t){
-					next.probabilityList.add(0.0);
-				}
-				Double previousProbability = trans.fromState().probabilityList.get(t-1); //In case this space doesn't exist
-				Double currentProbability = 0.0;
-				try{
-					currentProbability = next.probabilityList.get(t);
-				}catch(Exception e){}
-				System.out.println("-----------------------------------------------");
-				System.out.println("Current State:" + trans.fromState().getName());
-				System.out.println("Current Time: " + t);
-				System.out.println("Previous Prob: " + previousProbability);
-				System.out.println("Current Prob: " + currentProbability);
-				System.out.println("trans Prob: " + trans.getTransProb());
-				Double newProbability = previousProbability * trans.getTransProb() + currentProbability;
-				next.probabilityList.set(t, newProbability);
-				tTaken.add(trans);
+					sum = sum * currentState.findEmissionProb(sequence.charAt(t-1));
+					fMatrix[k][t] = sum;
 				}
 			}
 		}
-	}
-	private static List<Transition> tTaken;
-	private static List<State> printMap(HashMap<String, State> mp) {
-		List<State> allStates = new ArrayList<State>();
-		for(int i = 0; i < mp.values().size(); i++){
-			allStates.add(null);
+		double sum = 0.0;
+		List<Transition> previousStates = endState.getBwdTransitions();
+		for(Transition currTrans: previousStates){
+			double transProb = currTrans.getTransProb();
+			int originID = Integer.parseInt(currTrans.fromState().getName());
+			double oldProb = fMatrix[originID][sequence.length()];
+			sum += transProb * oldProb;
+
 		}
-		Iterator<Entry<String, State>> it = mp.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String, State> pairs = (Map.Entry)it.next();
-			allStates.set(Integer.parseInt(pairs.getKey()), pairs.getValue());
-			it.remove(); // avoids a ConcurrentModificationException
+		fMatrix[statesList.size()-1][sequence.length()] = sum;
+
+		for(int i = 1; i < fMatrix.length; i++){
+			for(int j = 1; j < fMatrix[0].length; j++){
+				System.out.println("Alpha for state: " + i + " time: " + j + ": " + (float) fMatrix[i][j]);		
+			}
 		}
-		return allStates;
 	}
 
-}
-
-
-class pqHelper implements Comparable<pqHelper>{
-	public int priority;
-	public Transition t;
-	public int compareTo(pqHelper arg0) {
-		if(this.priority == arg0.priority) return 0;
-		else if(this.priority > arg0.priority) return 1;
-		else return -1;
-		
-		
-	}
 }

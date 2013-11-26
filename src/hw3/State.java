@@ -42,5 +42,15 @@ public class State {
 	public List<Double> probabilityList;
 	public List<Boolean> visited;
 	
+	public Double findEmissionProb(char c) {
+		for(Emission e: emissions){
+			if(e.emission().charAt(0) == c){
+				return e.getEmissionProb();
+			}
+		}
+		return null;
+		
+	}
+	
 
 }
