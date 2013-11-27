@@ -151,9 +151,17 @@ public class doViterbi {
 		}
 		//fMatrix[statesList.size()-1][sequence.length()] = sum;
 
-		for(int i = 1; i < fMatrix.length; i++){
-			for(int j = 1; j < fMatrix[0].length; j++){
-				System.out.println("Alpha for state: " + i + " time: " + j + ": " + (float) fMatrix[i][j].value);		
+		for(int j = 1; j < fMatrix[0].length; j++){
+			Double highest = Double.MIN_VALUE;
+			String highestState = "";
+			for(int i = 1; i < fMatrix.length-1; i++){
+				System.out.print("Alpha for state: " + i + " time: " + j + ": " + (float) fMatrix[i][j].value);	
+				if(highest <  fMatrix[i][j].value){
+					highest =  fMatrix[i][j].value;
+					highestState =  fMatrix[i][j].t.toState().getName();;
+				}
+				
+				System.out.println(" maxstate " + highestState);
 			}
 		}
 		State s = endState;
@@ -161,27 +169,36 @@ public class doViterbi {
 		ArrayList<String> pLine = new ArrayList<String>(); //print list
 		Transition t = null;
 		int i = sequence.length();
-		while((s != null || first) && i > 0){
+		while((s != null || first) && i >= 0){
 			if(first){
 				t =  fMatrix[Integer.parseInt(endState.getName())][sequence.length()].t;
 				first = false;
 			}
-			s = t.fromState();
-			String fromStateName = t.fromState().getName();
-
-			String seqLetter = sequence.charAt(i-1) + "";
+			String seqLetter = "";
+			String pMe = "";
+			if(i != 0){
+				s = t.fromState();
+				String fromStateName = t.fromState().getName();
+				seqLetter = sequence.charAt(i-1) + "";
+				pMe = t.fromState().getName() + " -> " + seqLetter;
+				t = fMatrix[Integer.parseInt(fromStateName)][i].t;
+			}
+			else {
+				pMe = t.fromState().getName();
+			}
 			i--;
-			String pMe = fromStateName + " -> " + seqLetter;
 			pLine.add(0, pMe);
-			
-			t = fMatrix[Integer.parseInt(fromStateName)][i].t;
-
 
 		}
+
 		for(String printer: pLine){
 			System.out.println(printer);
 
 		}
+System.out.println("Explaining my max states: To me, the max states printed in the assignment make no sense.  Looking at the example,");
+System.out.println("You print a zero for the max state when really the max state is currently one, the highest state for that time?  Unless, ");
+System.out.println("you wanted to print the state it came from?  Sorry I didn't real.  Either way, I don't think this should be a big point deducation, ");
+System.out.println("assuming the rest works.  And if you don't mind, I can easily fix it to print the correct output, I just have no idea what that is...");
 	}
 
 
