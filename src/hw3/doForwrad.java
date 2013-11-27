@@ -2,12 +2,7 @@ package hw3;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +20,6 @@ public class doForwrad {
 		//Determines required information about inputs
 		String transitionsFileName = args[0];
 		String transitionsFileNameSyntax = args[1];
-		int stateCounter = 0; //Keeps track of the number of the states - and indicies in grid.
 		String emissionFileName = args[2];
 		String emissionFileNameSyntax = args[3];
 		String startStateName = args[4];

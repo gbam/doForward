@@ -1,12 +1,7 @@
 package hw3;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +21,7 @@ public class doViterbi {
 		//Determines required information about inputs
 		String transitionsFileName = args[0];
 		String transitionsFileNameSyntax = args[1];
-		int stateCounter = 0; //Keeps track of the number of the states - and indicies in grid.
+
 		String emissionFileName = args[2];
 		String emissionFileNameSyntax = args[3];
 		String startStateName = args[4];
@@ -97,8 +92,6 @@ public class doViterbi {
 		State startState = statesList.get(Integer.parseInt(startStateName));
 		endState = statesList.get(Integer.parseInt(endStateName));
 		startState.probabilityList.add(1.0);
-		double[] findMax;
-		int[] indicies;
 		ViterbiHolder[][] fMatrix = new ViterbiHolder[statesList.size()][sequence.length() + 1];
 		//Initialize matrix
 		for(int i = 0; i < fMatrix.length; i++){
@@ -113,12 +106,8 @@ public class doViterbi {
 			if(statesList.get(k) != startState && statesList.get(k) != endState){
 				for(int t = 1; t < sequence.length() + 1; t++){
 
-					double sum = 0.0;
 					State currentState = statesList.get(k);
 					List<Transition> previousTrans = currentState.getBwdTransitions();
-					findMax = new double[previousTrans.size()];
-					indicies = new int[previousTrans.size()];
-
 
 					for(Transition tOld: previousTrans){
 						double transProb = tOld.getTransProb();
@@ -135,7 +124,6 @@ public class doViterbi {
 				}
 			}
 		}
-		double sum = 0.0;
 		List<Transition> previousStates = endState.getBwdTransitions();
 		for(Transition currTrans: previousStates){ //All previous transition to end state
 			double transProb = currTrans.getTransProb(); //Get their transmission probability

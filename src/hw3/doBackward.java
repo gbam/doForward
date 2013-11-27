@@ -21,7 +21,6 @@ public class doBackward {
 		//Determines required information about inputs
 		String transitionsFileName = args[0];
 		String transitionsFileNameSyntax = args[1];
-		int stateCounter = 0; //Keeps track of the number of the states - and indicies in grid.
 		String emissionFileName = args[2];
 		String emissionFileNameSyntax = args[3];
 		String startStateName = args[4];
@@ -94,31 +93,107 @@ public class doBackward {
 
 
 		//Here's where the algo starts
-		double[][] fMatrix = new double[statesList.size()][sequence.length() + 1]; // stores all probabilities of observing the rest of X given that we are in state k and after i characters
+		double[][] fMatrix = new double[statesList.size()][sequence.length() + 1]; //Stores probabilities
+		// stores all probabilities of observing the rest of X given that we are in state k and after i characters
 		fMatrix[fMatrix.length - 1][fMatrix[0].length - 1] = 1;
-		
+		double transProb = 0; 
 		for(int i=0; i< Integer.parseInt(endStateName);i++){ // initialize matrix
-//			try {
-//				tempProb = statesList.get(i).getTransitions();
-//			} catch(Exception e) {
-//				tempProb = 0.0;
-//			}
-//			fMatrix[i][x] = tempProb; 
+			try {
+				for(int j = 0; j < statesList.get(i).getFwdTransitions().size(); j++){
+					Transition currentTransition = statesList.get(i).getFwdTransitions().get(j);
+					if(currentTransition.toState().getName().compareTo(endState.getName()) == 0){
+						transProb = currentTransition.getTransProb();
+					}
+				}
+			} catch(Exception e) {
+				transProb = 0.0;
+			}
+			fMatrix[i][sequence.length()] = transProb; 
+		}
+
+		backwardAlg(fMatrix, statesList);
+
+		for(int c = fMatrix[0].length - 2; c > 0; c--) {
+			for(int r = 1; r < fMatrix.length - 1; r++) {
+				System.out.println("Beta for state " + r + " time " + c + ": " + (float) fMatrix[r][c]);
+
+			}
 		}
 
 
+		double totalProb = 0, emissionProb = 0;;
+		for(int i = 1; i < Integer.parseInt(endState.getName()); i++){
+			try { // get probability of emission for first char 
+				List<Emission> e =  statesList.get(i).getEmission();
+				for(int z = 0; z < e.size(); z++){
+					if(e.get(z).emission().charAt(0) == sequence.charAt(0)){
+						emissionProb = e.get(z).getEmissionProb();
+						break;
+					}
 
+				}
+			} catch(Exception e) { // Got some errors, caught some errors, shouldn't be used.
+				emissionProb = 0.0;
+			}
+			try { // getting transition probabilities
+				List<Transition> tList = startState.getFwdTransitions();
+				for(int p = 0; p < tList.size(); p++){
+					if(tList.get(p).toState().getName() == statesList.get(i).getName()){
+						transProb = tList.get(p).getTransProb();
+						break;
+					}
+				}
+			} catch(Exception e) { // just in case the transProb is set to 0
+				transProb = 0.0;
+			}
+			totalProb += fMatrix[i][1]*emissionProb*transProb; //  total backwards probability
+		}
+		System.out.println("Backward probability: " + totalProb);
 	}
-	class pqHelper implements Comparable<pqHelper>{
-		public int priority;
-		public Transition t;
-		public int compareTo(pqHelper arg0) {
-			if(this.priority == arg0.priority) return 0;
-			else if(this.priority > arg0.priority) return 1;
-			else return -1;
+
+
+
+
+
+	public static void backwardAlg(double[][] fMatrix, List<State> statesList){
+		double emissionProb = 0;
+		// compute every probability except the last one 
+		for(int i = sequence.length()-1; i>=1; i--){
+			for(int j = 1; j < Integer.parseInt(endState.getName()); j++){
+				//				String xT = sequence[i];
+				double sum1 = 0;			
+				double sum2 = 0;
+				emissionProb = 0;
+				for(int a = 1; a < Integer.parseInt(endState.getName()); a++){
+
+					//gets the emission for a given letter at a given state
+					List<Emission> emissionList = statesList.get(a).getEmission();
+					for(int q = 0; q < emissionList.size(); q++){
+						if(emissionList.get(q).emission().charAt(0) == sequence.charAt(i)){
+							emissionProb = emissionList.get(q).getEmissionProb();
+							break;
+						}
+					}
+					//End of getting emission letter
+
+					//Gets the probability of a transition
+					try {
+						List<Transition> listT = statesList.get(j).getFwdTransitions();
+						for(int q = 0; q < listT.size(); q++){
+							if(listT.get(q).toState().getName() == statesList.get(a).getName()){
+								sum2 = listT.get(q).getTransProb();
+							}
+						}
+					} catch(Exception e) {
+						sum2 = 0.0;
+					}
+
+					//End the probability of getting a transition
+
+					sum1 += emissionProb*fMatrix[a][i+1]*sum2;
+				}
+				fMatrix[j][i] = sum1;
+			}
 		}
-
-	} 
-
-
+	}
 }
